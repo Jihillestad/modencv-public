@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Some of this is "stolen" from https://github.com/mischavandenburg/dotfiles/blob/main/scripts/zet
+# to get started
+
+# function to prompt for employer name
+get_filename() {
+	read -p "Employer name: " filename
+	echo "$filename"
+}
+
+# function to create and open a file in the specified directory
+open_file() {
+
+	# Cd into the directory
+	cd "$1" || exit
+
+	# Create the file in the specified directory
+	touch "$1/cl-$filename.tex"
+	touch "$1/cl-$filename-content.tex"
+
+	# create unique identifier and links section
+	timestamp="$(date +"%Y/%m/%d")"
+
+	# format the files
+	{
+    echo "\documentclass[11pt,a4paper]{moderncv}"
+    echo "\moderncvtheme[red]{classic}"
+    echo -en "\n"
+    echo "\usepackage[utf8]{inputenc}"
+    echo -en "\n"
+    echo "\usepackage[scale=0.8]{geometry}"
+    echo "\recomputelengths"
+    echo -en "\n"
+    echo "\firstname{John}"
+    echo "\familyname{Doe}"
+    echo "\title{Senior Consultant}"
+    echo "\address{My Street 1}{9999 Knowhere}"
+    echo "\mobile{+99 99 99 99}"
+    echo "\email{john.doe@hotmail.com}"
+    echo "\social[twitter]{@johndoe}"
+    echo "\social[github]{https://github.com/My_Profile}"
+    # echo "\photo[64pt][0pt]{"./JannIdar.jpg"}"
+    echo -en "\n"
+    echo "\begin{document}"
+    echo "\recipient{[Recruiter]}{$filename\\\Address\\\ZipCode City}"
+    echo "\date{$timestamp}"
+    echo "\opening{Dear Sir/Madam,}"
+    echo "\closing{Sincerely yours,}"
+    echo -en "\n"
+    echo "% Get cover letter content from a separate file"
+    echo "\makelettertitle"
+    echo "\input{cl-$filename-content}"
+    echo -en "\n"
+    echo -en "\n"
+    echo -en "\n"
+    echo "\makeletterclosing"
+    echo "%\clearpage\end{CJK*}" 
+    echo -en "\n"
+    echo "\end{document}"
+	} >>"$1/cl-$filename.tex"
+
+  {
+    echo "% Write your cover letter content here. ChatGPT is useful"
+    echo "example text content."
+  } >>"$1/cl-$filename-content.tex"
+
+	# Open the file in Neovim
+	nvim '+ normal ggzzi' -O "$1/cl-$filename.tex" "$1/cl-$filename-content.tex"
+}
+
+# Prompt the user if no filename is provided
+if [[ $# -eq 0 ]]; then
+	filename=$(get_filename)
+fi
+
+# if more than one argument is given, print error message and stop script
+if [[ $# -gt 1 ]]; then
+	echo "Please provide only one filename separated by dashes, without .tex extension."
+	echo "Example: mkcl employername"
+	exit 1
+fi
+
+# set filename to the argument given to the script
+if [[ $# -eq 1 ]]; then
+	filename=$1
+fi
+
+# Make sure 'export MODERNCV="$HOME/projects/latex/moderncv-public"' is included in your .zhshrc or .bashrc file
+open_file "$MODERNCV"
